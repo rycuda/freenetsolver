@@ -122,18 +122,13 @@ class Grid:
             return self.grid[position.y][position.x]
         return Piece(SHAPES['Edge'],position)
 
-    def neighbours(self,cell):
-        if self.ingrid(cell.position):
-            return [self.piece(cell.position.move(direction)) for direction in DIRECTIONS]
-        return None
-
     def prints_as(self):
         return '\n'.join([''.join([cell.prints_as() for cell in row]) for row in self.grid])
 
 LEFT = Direction(-1,0)
-RIGHT = Direction(1,0)
-DOWN = Direction(0,1)
-UP = Direction(0,-1)
+UP = LEFT.rotate(1)
+RIGHT = LEFT.rotate(2)
+DOWN = LEFT.rotate(3)
 
 DIRECTIONS = [
         LEFT,
