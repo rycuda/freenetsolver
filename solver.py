@@ -200,7 +200,6 @@ def main():
             for cell in row:
                 collapse(grid,cell)
         print(grid.prints_as(),'\n')
-    print('\n'.join(['-'.join([f"{cell.rotation}-{cell.connections}" for cell in row]) for row in grid.grid]))
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
