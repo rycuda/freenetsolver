@@ -3,7 +3,6 @@ from random import choice
 import logging
 
 logger=logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
 
 # coordinate system 0,0 top left, positive x is right, positive y is down
 # rotations are in 90 degree increments clockwise with 0 being left
@@ -93,6 +92,18 @@ class Piece:
         self.rotation = rotation%4
         self.connections = self.shape.rotate(self.rotation)
 
+    def canconnect(self,direction):
+        if len(self.connections) == 0 : return False
+        for rotation in self.possible_rotations:
+            if direction in self.shape.rotate(rotation):
+                return True
+        return False
+
+    def mustconnect(self,direction):
+        if all([direction in self.shape.rotate(rotation) for rotation in self.possible_rotations]):
+            return True
+        return False
+
 class Grid:
     def __init__(self,description):
         #test description is a square array of arrays
@@ -154,17 +165,6 @@ SAMPLE = [
         ]
 
 
-def canconnect(focus,direction):
-    if len(focus.connections) == 0 : return False
-    for rotation in focus.possible_rotations:
-        if direction in focus.shape.rotate(rotation):
-            return True
-    return False
-
-def mustconnect(focus,direction):
-    if all([direction in focus.shape.rotate(rotation) for rotation in focus.possible_rotations]):
-        return True
-    return False
 
 def collapse(grid,focus):
     logger.debug(f'---=== collapsing {focus.position}')
@@ -175,10 +175,10 @@ def collapse(grid,focus):
         logger.debug(f"{direction}")
         neighbour = grid.piece(focus.position.move(direction))
         logger.debug(f"{neighbour}")
-        if canconnect(neighbour,direction.opposite()):
+        if neighbour.canconnect(direction.opposite()):
             valid_directions.add(direction)
             logger.debug('valid')
-        if mustconnect(neighbour,direction.opposite()):
+        if neighbour.mustconnect(direction.opposite()):
             mandatory_directions.add(direction)
             logger.debug('valid')
     valid_rotations = []
@@ -203,4 +203,5 @@ def main():
     print('\n'.join(['-'.join([f"{cell.rotation}-{cell.connections}" for cell in row]) for row in grid.grid]))
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     main()
