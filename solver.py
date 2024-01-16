@@ -81,6 +81,7 @@ class Piece:
         self.position = position
         self.connections = self.shape.connections
         self.possible_rotations = list(range(0,4))
+        self.rotational_symmetry()
 
     def __str__(self):
         return self.prints_as()
@@ -103,6 +104,17 @@ class Piece:
         if all([direction in self.shape.rotate(rotation) for rotation in self.possible_rotations]):
             return True
         return False
+
+    def rotational_symmetry(self):
+        connections_list=[]
+        valid_rotations=[]
+        for rotation in self.possible_rotations:
+            connections = self.shape.rotate(rotation)
+            if connections not in connections_list:
+                connections_list.append(connections)
+                valid_rotations.append(rotation)
+        self.possible_rotations = valid_rotations
+
 
 class Grid:
     def __init__(self,description):
@@ -159,6 +171,7 @@ SAMPLE = [
         ['End','Corner','Tee','End'],
         ]
 
+        
 
 
 def collapse(grid,focus):
