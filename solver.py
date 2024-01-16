@@ -1,4 +1,5 @@
 from itertools import product,chain
+from functools import reduce
 from random import choice
 import logging
 
@@ -68,11 +69,11 @@ class Direction:
 
 class Shape:
     def __init__(self,connections,character):
-        self.connections = connections
+        self.connections = set(connections)
         self.prints_as = character
 
     def rotate(self,rotation):
-        return [connection.rotate(rotation) for connection in self.connections]
+        return {connection.rotate(rotation) for connection in self.connections}
 
 class Piece:
     def __init__(self,shape,position,rotation=0):
@@ -106,10 +107,12 @@ class Piece:
         return False
 
     def rotational_symmetry(self):
+        logger.debug('testing rotational symmetry')
         connections_list=[]
         valid_rotations=[]
         for rotation in self.possible_rotations:
             connections = self.shape.rotate(rotation)
+            logger.debug(f'Test if {connections} are in {connections_list} {connections in connections_list}')
             if connections not in connections_list:
                 connections_list.append(connections)
                 valid_rotations.append(rotation)
@@ -136,6 +139,41 @@ class Grid:
 
     def prints_as(self):
         return '\n'.join([''.join([cell.prints_as() for cell in row]) for row in self.grid])
+
+    def permutations(self):
+        return reduce(lambda a,e: a*len(e.possible_rotations),chain.from_iterable(self.grid),1)
+
+    def neighbours(self,position):
+        neighbours = set()
+        for direction in DIRECTIONS:
+            neighbours.add((direction,self.piece(focus.position.move(direction))))
+        return neighbours
+
+
+    def collapse(self,focus):
+        logger.debug(f'---=== collapsing {focus.position}')
+        logger.debug(f"before: {focus}")
+        valid_directions = set()
+        mandatory_directions = set()
+        for direction,neighbour in self.neighbours(focus.position):
+            logger.debug(f"{direction}")
+            logger.debug(f"{neighbour}")
+            if neighbour.canconnect(direction.opposite()):
+                valid_directions.add(direction)
+                logger.debug('valid')
+            if neighbour.mustconnect(direction.opposite()):
+                mandatory_directions.add(direction)
+                logger.debug('valid')
+        valid_rotations = []
+        for rotation in focus.possible_rotations:
+            connections = focus.shape.rotate(rotation)
+            logger.debug(f"rotation: {rotation},{connections}")
+            if connections.issubset(valid_directions) and mandatory_directions.issubset(connections):
+                logger.debug('valid')
+                valid_rotations.append(rotation)
+        focus.possible_rotations=valid_rotations
+        focus.set_rotation(choice(focus.possible_rotations))
+        logger.debug(f"after: {focus}")
 
 LEFT = Direction(-1,0)
 UP = LEFT.rotate(1)
@@ -171,42 +209,16 @@ SAMPLE = [
         ['End','Corner','Tee','End'],
         ]
 
-        
 
-
-def collapse(grid,focus):
-    logger.debug(f'---=== collapsing {focus.position}')
-    logger.debug(f"before: {focus}")
-    valid_directions = set()
-    mandatory_directions = set()
-    for direction in DIRECTIONS:
-        logger.debug(f"{direction}")
-        neighbour = grid.piece(focus.position.move(direction))
-        logger.debug(f"{neighbour}")
-        if neighbour.canconnect(direction.opposite()):
-            valid_directions.add(direction)
-            logger.debug('valid')
-        if neighbour.mustconnect(direction.opposite()):
-            mandatory_directions.add(direction)
-            logger.debug('valid')
-    valid_rotations = []
-    for rotation in focus.possible_rotations:
-        connections = focus.shape.rotate(rotation)
-        logger.debug(f"rotation: {rotation},{connections}")
-        if set(connections).issubset(valid_directions) and mandatory_directions.issubset(set(connections)):
-            logger.debug('valid')
-            valid_rotations.append(rotation)
-    focus.possible_rotations=valid_rotations
-    focus.set_rotation(choice(focus.possible_rotations))
-    logger.debug(f"after: {focus}")
 
 def main():
     grid = Grid(SAMPLE)
+    previous_permutations = grid.permutations() + 1
+    print(grid.permutations())
     print(grid.prints_as(),'\n')
-    for itter in range(0,2):
-        for row in grid.grid:
-            for cell in row:
-                collapse(grid,cell)
+    while grid.permutations() > 1 and previous_permutations != grid.permutations():
+        [grid.collapse(cell) for row in grid.grid for cell in row ]
+        print(grid.permutations())
         print(grid.prints_as(),'\n')
 
 if __name__ == "__main__":
